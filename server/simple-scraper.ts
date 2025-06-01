@@ -101,22 +101,14 @@ export class SimpleHelanScraper {
         content: content.substring(0, 5000), // Limit content size
         metadata: { 
           scrapedAt: new Date(),
-          method: 'fetch',
+          method: 'sitemap',
           linksFound: links.length 
         },
         lastScraped: new Date(),
       });
 
-      console.log(`Successfully scraped ${url} - found ${links.length} links`);
-
-      // Scrape ALL found links without restrictive filtering
-      console.log(`Found ${links.length} links, scraping all of them...`);
-      
-      for (const link of links) {
-        await this.scrapeSubpage(link);
-        // Small delay to avoid overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
+      console.log(`Successfully scraped ${url}`);
+      // No longer following links - only scraping direct sitemap URLs
 
     } catch (error) {
       console.error(`Error scraping ${url}:`, error);
