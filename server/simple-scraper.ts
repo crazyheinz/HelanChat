@@ -56,8 +56,8 @@ export class SimpleHelanScraper {
       
       console.log(`Found ${urls.length} URLs in sitemap ${sitemapUrl}`);
       
-      // Scrape each URL (limit to avoid overwhelming)
-      const urlsToScrape = urls.slice(0, 100); // Process first 100 URLs per sitemap
+      // Scrape all URLs from sitemap
+      const urlsToScrape = urls; // Process ALL URLs from sitemap
       
       for (const url of urlsToScrape) {
         await this.scrapeWithFetch(url);
