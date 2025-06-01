@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateChatResponse, analyzeUserProfile } from "./openai";
 import { helanScraper, scheduleScrapingJob } from "./scraper";
+import { simpleHelanScraper } from "./simple-scraper";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 
@@ -307,13 +308,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Run scraping in background
       setImmediate(async () => {
         try {
-          await helanScraper.scrapeHelanWebsites();
-          await helanScraper.processScrapedContentForServices();
+          await simpleHelanScraper.scrapeHelanWebsites();
           console.log("Manual scraping completed");
         } catch (error) {
           console.error("Manual scraping failed:", error);
-        } finally {
-          await helanScraper.close();
         }
       });
       
