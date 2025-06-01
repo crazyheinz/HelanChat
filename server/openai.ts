@@ -107,6 +107,7 @@ Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
     try {
       const parsedResponse = JSON.parse(aiResponse);
       console.log("Successfully parsed JSON response");
+      console.log("Parsed content preview:", parsedResponse.content?.substring(0, 100));
       
       // Clean up the content text - remove \n\n and format properly
       if (parsedResponse.content) {
@@ -114,25 +115,39 @@ Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
           .replace(/\\n\\n/g, '\n\n')  // Convert literal \n\n to actual line breaks
           .replace(/\\n/g, '\n')       // Convert literal \n to actual line breaks
           .trim();
+        console.log("Cleaned content preview:", parsedResponse.content.substring(0, 100));
       }
       
       // Ensure we have valid recommendations with proper service mapping
-      if (parsedResponse.recommendations) {
+      if (parsedResponse.recommendations && Array.isArray(parsedResponse.recommendations)) {
         parsedResponse.recommendations = parsedResponse.recommendations.map((rec: any) => {
+          // If rec is just a string, convert to object
+          if (typeof rec === 'string') {
+            rec = { name: rec, relevanceScore: 0.8 };
+          }
+          
           const matchingService = context.services.find(s => 
-            s.name.toLowerCase().includes(rec.name.toLowerCase()) ||
-            rec.name.toLowerCase().includes(s.name.toLowerCase())
+            s.name && rec.name &&
+            (s.name.toLowerCase().includes(rec.name.toLowerCase()) ||
+            rec.name.toLowerCase().includes(s.name.toLowerCase()))
           );
           
           if (matchingService) {
             return {
               ...matchingService,
               relevanceScore: rec.relevanceScore || 0.8,
-              description: rec.description || matchingService.description,
+              description: rec.description || matchingService.description || '',
             };
           }
           
-          return rec;
+          return {
+            id: `rec-${Date.now()}`,
+            name: rec.name || 'Onbekende service',
+            description: rec.description || '',
+            category: 'algemeen',
+            relevanceScore: rec.relevanceScore || 0.8,
+            isHelanService: true
+          };
         });
       }
 
