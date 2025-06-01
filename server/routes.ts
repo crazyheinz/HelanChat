@@ -87,7 +87,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If user asks about specific products/services, search for relevant content
       const searchTerms = content.toLowerCase();
       if (searchTerms.includes('verkoop') || searchTerms.includes('koop') || searchTerms.includes('product') || 
-          searchTerms.includes('hebben jullie') || searchTerms.includes('bieden jullie aan')) {
+          searchTerms.includes('hebben jullie') || searchTerms.includes('bieden jullie aan') ||
+          searchTerms.includes('rolstoel') || searchTerms.includes('wandelstok') || searchTerms.includes('rollator') ||
+          searchTerms.includes('steunkous') || searchTerms.includes('thuiszorg') || searchTerms.includes('medicijn') ||
+          searchTerms.includes('hulpmiddel') || searchTerms.includes('zorg') || searchTerms.includes('prijs') ||
+          searchTerms.includes('kosten') || searchTerms.includes('beschikbaar') || searchTerms.includes('verkrijgbaar')) {
         
         // Search in scraped content for relevant pages
         const relevantContent = await storage.searchScrapedContent(content);

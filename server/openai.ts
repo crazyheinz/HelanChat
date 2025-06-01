@@ -91,7 +91,7 @@ ONLY use prices that appear in the actual scraped content - DO NOT invent or est
 ONLY use product URLs that exist in the scraped data.
 ONLY provide product information that is verified in the actual website content.
 
-When products are found in scraped content, include productLinks:
+When products are found in scraped content, respond in JSON format with productLinks:
 {
   "content": "Your response mentioning available products with accurate information",
   "recommendations": [],
@@ -99,12 +99,14 @@ When products are found in scraped content, include productLinks:
   "productLinks": [
     {
       "name": "EXACT product name from scraped content",
-      "url": "EXACT URL from scraped content",
+      "url": "EXACT URL from scraped content", 
       "price": "EXACT price from scraped content or leave empty if not found",
       "description": "EXACT description from scraped content"
     }
   ]
 }
+
+Always respond in valid JSON format.
 
 If no exact product information is found in scraped content, respond that they can find the complete product catalog at https://www.helanzorgwinkel.be or contact the Helan Zorgwinkel directly for specific product availability and pricing. Always mention specific contact methods when product information is not available.
 
