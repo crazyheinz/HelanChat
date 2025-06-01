@@ -82,75 +82,84 @@ export async function searchProducts(query: string): Promise<ProductLink[]> {
     const results = await storage.searchScrapedContent(query);
     console.log(`Found ${results.length} total search results`);
 
-    // Prioriteer specifieke productpagina's
-    const productResults = results.filter(
-      (item) =>
-        (item.url.includes("helanzorgwinkel.be") || item.url.includes("helan.be")) &&
-        (item.content?.toLowerCase().includes(query.toLowerCase()) ||
-          (item.title && item.title.toLowerCase().includes(query.toLowerCase())))
-    ).sort((a, b) => {
-      // Prioriteer pagina's met prijzen en specifieke producten
-      const aHasPrice = a.content.includes('€') || a.content.includes('EUR');
-      const bHasPrice = b.content.includes('€') || b.content.includes('EUR');
-      const aIsProductPage = a.url.includes('/shop/') || a.url.includes('/product/');
-      const bIsProductPage = b.url.includes('/shop/') || b.url.includes('/product/');
-      
-      if (aIsProductPage && !bIsProductPage) return -1;
-      if (!aIsProductPage && bIsProductPage) return 1;
+    const purchaseKeywords = ["kopen", "bestellen", "shop", "prijs", "huren"];
+    const isPurchaseQuery = purchaseKeywords.some(keyword => query.toLowerCase().includes(keyword));
+
+    let productResults = results.filter(item => {
+      const lowerCaseUrl = item.url.toLowerCase();
+      if (isPurchaseQuery) {
+        return lowerCaseUrl.includes("helanzorgwinkel.be");
+      }
+      return lowerCaseUrl.includes("helanzorgwinkel.be") || lowerCaseUrl.includes("helan.be");
+    });
+
+    productResults.sort((a, b) => {
+      const aIsZorgwinkel = a.url.toLowerCase().includes("helanzorgwinkel.be");
+      const bIsZorgwinkel = b.url.toLowerCase().includes("helanzorgwinkel.be");
+      const aHasPrice = extractPrice(a.content) !== undefined;
+      const bHasPrice = extractPrice(b.content) !== undefined;
+
+      if (aIsZorgwinkel && !bIsZorgwinkel) return -1;
+      if (!aIsZorgwinkel && bIsZorgwinkel) return 1;
       if (aHasPrice && !bHasPrice) return -1;
       if (!aHasPrice && bHasPrice) return 1;
+      // If relevance from searchScrapedContent is not enough, add more sorting logic here
       return 0;
     });
 
-    console.log(`Filtered to ${productResults.length} product results`);
+    console.log(`Filtered to ${productResults.length} product results after initial filtering and sorting`);
+
+    if (productResults.length === 0) {
+      return [];
+    }
 
     const productLinks: ProductLink[] = productResults
-      .slice(0, 5)
+      .slice(0, 5) // Take top 5 results
       .map((item) => {
-        // Extract specifieke productinformatie uit de content
-        const content = item.content;
-        let productName = item.title || "Product";
-        let price = extractPrice(content);
-        let description = '';
-        
-        // Zoek naar specifieke productnamen in content die rolstoel bevatten
-        if (content.includes('rolstoel') || content.includes('Rolstoel')) {
-          const lines = content.split('\n');
-          for (const line of lines) {
-            if ((line.includes('rolstoel') || line.includes('Rolstoel')) && 
-                (line.includes('€') || line.includes('EUR')) &&
-                line.length < 100 && line.length > 10) {
-              const parts = line.split(/€|EUR/);
-              if (parts.length >= 2) {
-                productName = parts[0].trim();
-                const priceMatch = line.match(/(\d+(?:[.,]\d{2})?)\s*(?:€|EUR)/);
-                if (priceMatch) {
-                  price = `€${priceMatch[1]}`;
-                }
-              }
+        const productName = item.title || query; // Default to query if title is missing
+        const price = extractPrice(item.content);
+        let description = "";
+
+        // Try to find a more specific description
+        // Look for sentences near the query term or price. This is a simple heuristic.
+        const sentences = item.content.split('.');
+        let foundSpecificDesc = false;
+        for (const sentence of sentences) {
+          const lowerSentence = sentence.toLowerCase();
+          if (lowerSentence.includes(query.toLowerCase()) || (price && lowerSentence.includes(price.split(' ')[0]))) {
+            description = sentence.trim();
+            if (description.length > 30) { // Ensure it's a meaningful sentence
+              foundSpecificDesc = true;
               break;
             }
           }
         }
+
+        if (!foundSpecificDesc) {
+          const shortDesc = extractShortDescription(item.content);
+          description = shortDesc ? `Informatie over: ${shortDesc}` : `Meer informatie over ${productName}`;
+        }
         
-        // Verbeterde beschrijving
-        if (content.includes('Lichtgewicht')) description += 'Lichtgewicht ';
-        if (content.includes('Manuele')) description += 'Manuele ';
-        if (content.includes('Elektrische')) description += 'Elektrische ';
-        description += 'rolstoel - Verkrijgbaar bij Helan Zorgwinkel';
-        
+        if (item.url.toLowerCase().includes("helanzorgwinkel.be")) {
+          description += " (Beschikbaar bij Helan Zorgwinkel)";
+        } else if (item.url.toLowerCase().includes("helan.be")) {
+          description += " (Informatie van Helan)";
+        }
+
+
         return {
           name: productName,
           url: item.url,
           price: price,
-          description: description || extractShortDescription(content) || 'Rolstoel beschikbaar via Helan Zorgwinkel'
+          description: description,
         };
       });
 
     console.log('Product links being returned:', productLinks.map(p => ({
       name: p.name,
       url: p.url,
-      price: p.price
+      price: p.price,
+      description: p.description
     })));
 
     return productLinks;
