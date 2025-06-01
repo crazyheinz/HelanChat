@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import type { InsertScrapedContent, InsertService } from '@shared/schema';
+import { scrapingDb, scrapingContent, extractedServices } from './scraping-db';
 
 export class SimpleHelanScraper {
   

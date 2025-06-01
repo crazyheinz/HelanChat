@@ -4,8 +4,12 @@ import { storage } from "./storage";
 import { generateChatResponse, analyzeUserProfile } from "./openai";
 import { helanScraper, scheduleScrapingJob } from "./scraper";
 import { simpleHelanScraper } from "./simple-scraper";
+import { initializeScrapingDb, scrapingDb, scrapingContent, extractedServices } from "./scraping-db";
 import { z } from "zod";
 import { nanoid } from "nanoid";
+
+// Initialize scraping database
+initializeScrapingDb();
 
 // Start scraping schedule
 scheduleScrapingJob();
@@ -337,6 +341,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
     } catch (error) {
       res.status(500).json({ error: "Failed to start scraping" });
+    }
+  });
+
+  // Scraping database API endpoints
+  app.get("/api/scraping/content", async (req, res) => {
+    try {
+      const content = await scrapingDb.select().from(scrapingContent).orderBy(scrapingContent.scrapedAt);
+      res.json(content);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scraping content" });
+    }
+  });
+
+  app.get("/api/scraping/services", async (req, res) => {
+    try {
+      const services = await scrapingDb.select().from(extractedServices).orderBy(extractedServices.extractedAt);
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch extracted services" });
+    }
+  });
+
+  app.get("/api/scraping/stats", async (req, res) => {
+    try {
+      const contentCount = await scrapingDb.select().from(scrapingContent);
+      const servicesCount = await scrapingDb.select().from(extractedServices);
+      
+      res.json({
+        totalContent: contentCount.length,
+        totalServices: servicesCount.length,
+        lastScraped: contentCount.length > 0 ? contentCount[contentCount.length - 1].scrapedAt : null
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scraping stats" });
+    }
+  });
+
+  app.post("/api/scraping/start", async (req, res) => {
+    try {
+      res.json({ message: "Scraping started" });
+      
+      setImmediate(async () => {
+        try {
+          await simpleHelanScraper.scrapeHelanWebsites();
+          console.log("Dedicated scraping completed");
+        } catch (error) {
+          console.error("Dedicated scraping failed:", error);
+        }
+      });
+      
+    } catch (error) {
+      res.status(500).json({ error: "Failed to start dedicated scraping" });
     }
   });
 
