@@ -42,6 +42,11 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
     queryKey: ["/api/admin/feedback"],
   });
 
+  // Fetch scraped content
+  const { data: scrapedContent = [], isLoading: scrapedLoading } = useQuery({
+    queryKey: ["/api/admin/scraped-content"],
+  });
+
   // Manual scraping mutation
   const scrapeMutation = useMutation({
     mutationFn: async () => {
@@ -361,6 +366,47 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
                           </p>
                         </div>
                       )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Scraped Content Section */}
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle>Gescrapte Content</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {scrapedLoading ? (
+                          <div className="space-y-2">
+                            {[1, 2, 3].map(i => (
+                              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                            ))}
+                          </div>
+                        ) : scrapedContent.length === 0 ? (
+                          <p className="text-muted-foreground text-center py-8">
+                            Nog geen content gescraped
+                          </p>
+                        ) : (
+                          scrapedContent.map((content: any, index: number) => (
+                            <div key={index} className="p-4 border rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-semibold text-sm truncate max-w-md">
+                                  {content.title || 'Geen titel'}
+                                </h4>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(content.lastScraped).toLocaleDateString('nl-NL')}
+                                </span>
+                              </div>
+                              <p className="text-xs text-blue-600 mb-2 truncate">
+                                {content.url}
+                              </p>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {content.content?.substring(0, 150)}...
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>

@@ -311,6 +311,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/scraped-content", async (req, res) => {
+    try {
+      const scrapedContent = await storage.getScrapedContent();
+      res.json(scrapedContent.slice(0, 20)); // Limit to 20 most recent items
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scraped content" });
+    }
+  });
+
   app.post("/api/admin/scrape", async (req, res) => {
     try {
       // Trigger manual scraping
