@@ -5,37 +5,68 @@ import { scrapingDb, scrapingContent, extractedServices } from './scraping-db';
 export class SimpleHelanScraper {
   
   async scrapeHelanWebsites(): Promise<void> {
-    console.log('Starting simple HTTP-based scraping...');
+    console.log('Starting sitemap-based scraping...');
     
     try {
-      // Scrape main websites and their key sections
-      const mainUrls = [
-        'https://helan.be',
-        'https://www.helan.be/nl/',
-        'https://www.helan.be/nl/ons-aanbod/',
-        'https://www.helan.be/nl/ons-aanbod/zorg-en-ondersteuning/',
-        'https://www.helan.be/nl/ons-aanbod/thuiszorg/',
-        'https://www.helan.be/nl/ons-aanbod/kraamzorg/',
-        'https://www.helan.be/nl/ons-aanbod/kinesitherapie/',
-        'https://helanzorgwinkel.be',
-        'https://www.helanzorgwinkel.be/',
-        'https://www.helanzorgwinkel.be/categorien/',
-        'https://www.helanzorgwinkel.be/zorg/',
-        'https://www.helanzorgwinkel.be/hulpmiddelen/',
+      // Scrape using sitemaps for comprehensive coverage
+      const sitemapUrls = [
+        'https://www.helan.be/nl/sitemap_static_nl.xml',
+        'https://www.helan.be/nl/sitemap_advantage_nl.xml', 
+        'https://www.helan.be/nl/sitemap_location_nl.xml',
+        'https://www.helan.be/nl/sitemap_blog_nl.xml',
+        'https://www.helan.be/fr/sitemap_static_fr.xml',
+        'https://www.helan.be/fr/sitemap_advantage_fr.xml',
+        'https://www.helan.be/fr/sitemap_location_fr.xml', 
+        'https://www.helan.be/fr/sitemap_blog_fr.xml'
       ];
 
-      for (const url of mainUrls) {
-        await this.scrapeWithFetch(url);
-        // Add small delay to avoid overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 100));
+      for (const sitemapUrl of sitemapUrls) {
+        console.log(`Processing sitemap: ${sitemapUrl}`);
+        await this.scrapeSitemap(sitemapUrl);
+        // Small delay between sitemaps
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
+
+      // Also scrape helanzorgwinkel main pages
+      await this.scrapeWithFetch('https://helanzorgwinkel.be');
+      await this.scrapeWithFetch('https://www.helanzorgwinkel.be/');
       
       // Process and extract services from scraped content
       await this.processScrapedContentForServices();
       
-      console.log('Simple scraping completed successfully');
+      console.log('Sitemap-based scraping completed successfully');
     } catch (error) {
-      console.error('Simple scraping failed:', error);
+      console.error('Sitemap scraping failed:', error);
+    }
+  }
+
+  private async scrapeSitemap(sitemapUrl: string): Promise<void> {
+    try {
+      const response = await fetch(sitemapUrl);
+      if (!response.ok) {
+        console.log(`Sitemap not found: ${sitemapUrl}`);
+        return;
+      }
+
+      const xmlContent = await response.text();
+      
+      // Extract URLs from sitemap XML
+      const urlMatches = xmlContent.match(/<loc>(.*?)<\/loc>/g) || [];
+      const urls = urlMatches.map(match => match.replace(/<\/?loc>/g, ''));
+      
+      console.log(`Found ${urls.length} URLs in sitemap ${sitemapUrl}`);
+      
+      // Scrape each URL (limit to avoid overwhelming)
+      const urlsToScrape = urls.slice(0, 100); // Process first 100 URLs per sitemap
+      
+      for (const url of urlsToScrape) {
+        await this.scrapeWithFetch(url);
+        // Small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+    } catch (error) {
+      console.error(`Error processing sitemap ${sitemapUrl}:`, error);
     }
   }
 
