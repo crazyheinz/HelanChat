@@ -1,4 +1,14 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal, uuid } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  jsonb,
+  decimal,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -11,6 +21,14 @@ export const users = pgTable("users", {
   role: text("role").default("user"), // user, admin
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export interface ProductLink {
+  name: string;
+  url: string;
+  price?: string;
+  description?: string;
+  image?: string;
+}
 
 export const conversations = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -87,15 +105,18 @@ export const analytics = pgTable("analytics", {
 });
 
 // Relations
-export const conversationsRelations = relations(conversations, ({ one, many }) => ({
-  user: one(users, {
-    fields: [conversations.userId],
-    references: [users.id],
+export const conversationsRelations = relations(
+  conversations,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [conversations.userId],
+      references: [users.id],
+    }),
+    messages: many(messages),
+    appointments: many(appointments),
+    feedback: many(feedback),
   }),
-  messages: many(messages),
-  appointments: many(appointments),
-  feedback: many(feedback),
-}));
+);
 
 export const messagesRelations = relations(messages, ({ one }) => ({
   conversation: one(conversations, {
@@ -135,7 +156,9 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   createdAt: true,
 });
 
-export const insertScrapedContentSchema = createInsertSchema(scrapedContent).omit({
+export const insertScrapedContentSchema = createInsertSchema(
+  scrapedContent,
+).omit({
   id: true,
   lastScraped: true,
 });
