@@ -106,7 +106,7 @@ When products are found in scraped content, include productLinks:
   ]
 }
 
-If no exact product information is found in scraped content, respond that you need to connect them with the Helan Zorgwinkel for accurate product details and pricing.
+If no exact product information is found in scraped content, respond that they can find the complete product catalog at https://www.helanzorgwinkel.be or contact the Helan Zorgwinkel directly for specific product availability and pricing. Always mention specific contact methods when product information is not available.
 
 Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
       ` }
