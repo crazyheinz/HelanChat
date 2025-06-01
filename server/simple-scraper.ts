@@ -41,6 +41,23 @@ export class SimpleHelanScraper {
     }
   }
 
+  async scrapeZorgwinkelOnly(): Promise<void> {
+    console.log('Starting helanzorgwinkel-only scraping...');
+    
+    try {
+      // Only scrape helanzorgwinkel sitemap
+      console.log('Processing sitemap: https://www.helanzorgwinkel.be/sitemap.xml');
+      await this.scrapeSitemap('https://www.helanzorgwinkel.be/sitemap.xml');
+      
+      // Process and extract services from scraped content
+      await this.processScrapedContentForServices();
+      
+      console.log('Helanzorgwinkel scraping completed successfully');
+    } catch (error) {
+      console.error('Helanzorgwinkel scraping failed:', error);
+    }
+  }
+
   private async scrapeSitemap(sitemapUrl: string): Promise<void> {
     try {
       const response = await fetch(sitemapUrl);
