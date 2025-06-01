@@ -7,7 +7,7 @@ import {
   type Feedback, type InsertFeedback, type Analytics, type InsertAnalytics
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, count } from "drizzle-orm";
+import { eq, desc, and, gte, count, sql, or } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -160,8 +160,10 @@ export class DatabaseStorage implements IStorage {
       .from(scrapedContent)
       .where(and(
         eq(scrapedContent.isActive, true),
-        // Note: This is a simple search implementation
-        // For production, consider using PostgreSQL's full-text search capabilities
+        or(
+          sql`LOWER(${scrapedContent.title}) LIKE ${'%' + query.toLowerCase() + '%'}`,
+          sql`LOWER(${scrapedContent.content}) LIKE ${'%' + query.toLowerCase() + '%'}`
+        )
       ));
   }
 

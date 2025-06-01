@@ -84,7 +84,7 @@ export class SimpleHelanScraper {
       }
       
     } catch (error) {
-      console.error(`Error processing sitemap ${sitemapUrl}:`, error);
+      console.error(`Error processing sitemap ${sitemapUrl}: ${error.message}`);
     }
   }
 
@@ -129,7 +129,7 @@ export class SimpleHelanScraper {
       // No longer following links - only scraping direct sitemap URLs
 
     } catch (error) {
-      console.error(`Error scraping ${url}:`, error);
+      console.error(`Error scraping ${url}: ${error.message}`);
     }
   }
 
@@ -301,11 +301,19 @@ export class SimpleHelanScraper {
     // Look for specific service patterns in the content
     const servicePatterns = [
       { name: 'Gipshoes', category: 'Orthopedische hulpmiddelen', keywords: ['gipshoes', 'gips schoen', 'gipsschoen'] },
-      { name: 'Thuiszorg', category: 'Thuiszorg', keywords: ['thuiszorg', 'verpleging thuis', 'zorg aan huis'] },
-      { name: 'Kinesitherapie', category: 'Therapie', keywords: ['kinesitherapie', 'fysiotherapie', 'revalidatie'] },
+      { name: 'Thuiszorg', category: 'Thuiszorg', keywords: ['thuiszorg', 'verpleging thuis', 'zorg aan huis', 'thuisverpleging'] },
+      { name: 'Kinesitherapie', category: 'Therapie', keywords: ['kinesitherapie', 'fysiotherapie', 'revalidatie', 'kinesist'] },
       { name: 'Rollator', category: 'Mobiliteitshulpmiddelen', keywords: ['rollator', 'loophulp', 'wandelframe'] },
       { name: 'Krukken', category: 'Mobiliteitshulpmiddelen', keywords: ['krukken', 'loopstokken', 'wandelstok'] },
-      { name: 'Incontinentiemateriaal', category: 'Persoonlijke verzorging', keywords: ['incontinentie', 'luiers', 'absorberend'] },
+      { name: 'Incontinentiemateriaal', category: 'Persoonlijke verzorging', keywords: ['incontinentie', 'luiers', 'absorberend materiaal'] },
+      { name: 'Psychologische hulp', category: 'Geestelijke gezondheid', keywords: ['psycholoog', 'psychologische hulp', 'therapie', 'gesprekstherapie', 'psychotherapie'] },
+      { name: 'Dieetadvies', category: 'Voeding', keywords: ['dietist', 'voedingsadvies', 'dieet', 'diëtiste', 'voedingsdeskundige'] },
+      { name: 'Ergotherapie', category: 'Therapie', keywords: ['ergotherapie', 'ergotherapeut'] },
+      { name: 'Kraamzorg', category: 'Gezinszorg', keywords: ['kraamzorg', 'postnatale zorg', 'kraamhulp'] },
+      { name: 'Personenalarmsysteem', category: 'Veiligheid', keywords: ['personenalarm', 'alarmknop', 'noodoproepsysteem', 'valalarm'] },
+      { name: 'Huishoudhulp', category: 'Thuisdiensten', keywords: ['huishoudhulp', 'poetshulp', 'dienstencheques'] },
+      { name: 'Tandzorg', category: 'Medische zorg', keywords: ['tandarts', 'tandzorg', 'mondzorg'] },
+      { name: 'Hospitalisatieverzekering', category: 'Verzekeringen', keywords: ['hospitalisatieverzekering', 'ziekenhuisverzekering', 'opname'] },
     ];
 
     for (const pattern of servicePatterns) {
@@ -314,16 +322,16 @@ export class SimpleHelanScraper {
       );
 
       if (hasKeyword) {
-        // Extract price information if available
-        const priceMatch = content.match(/(\d+(?:,\d+)?)\s*(?:euro|eur|€)/i);
-        const priceFrom = priceMatch ? priceMatch[1].replace(',', '.') : null;
+        // Price extraction removed for services from this method due to unreliability
+        const priceFrom = null;
+        const priceUnit = null;
 
         services.push({
           name: pattern.name,
           description: `${pattern.name} beschikbaar via ${isHelanService ? 'Helan' : 'Helan Zorgwinkel'}`,
           category: pattern.category,
           priceFrom,
-          priceUnit: priceFrom ? 'EUR' : null,
+          priceUnit,
           isHelanService,
           isActive: true,
           metadata: { 
