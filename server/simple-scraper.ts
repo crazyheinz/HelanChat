@@ -8,9 +8,27 @@ export class SimpleHelanScraper {
     console.log('Starting simple HTTP-based scraping...');
     
     try {
-      // Scrape using simple HTTP requests instead of browser automation
-      await this.scrapeWithFetch('https://helan.be');
-      await this.scrapeWithFetch('https://helanzorgwinkel.be');
+      // Scrape main websites and their key sections
+      const mainUrls = [
+        'https://helan.be',
+        'https://www.helan.be/nl/',
+        'https://www.helan.be/nl/ons-aanbod/',
+        'https://www.helan.be/nl/ons-aanbod/zorg-en-ondersteuning/',
+        'https://www.helan.be/nl/ons-aanbod/thuiszorg/',
+        'https://www.helan.be/nl/ons-aanbod/kraamzorg/',
+        'https://www.helan.be/nl/ons-aanbod/kinesitherapie/',
+        'https://helanzorgwinkel.be',
+        'https://www.helanzorgwinkel.be/',
+        'https://www.helanzorgwinkel.be/categorien/',
+        'https://www.helanzorgwinkel.be/zorg/',
+        'https://www.helanzorgwinkel.be/hulpmiddelen/',
+      ];
+
+      for (const url of mainUrls) {
+        await this.scrapeWithFetch(url);
+        // Add small delay to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       
       // Process and extract services from scraped content
       await this.processScrapedContentForServices();
@@ -60,17 +78,13 @@ export class SimpleHelanScraper {
 
       console.log(`Successfully scraped ${url} - found ${links.length} links`);
 
-      // Scrape important subpages
-      const importantLinks = links.filter(link => 
-        link.includes('product') || 
-        link.includes('service') || 
-        link.includes('zorg') ||
-        link.includes('prijs') ||
-        link.includes('cost')
-      ).slice(0, 5); // Limit to 5 important links
-
-      for (const link of importantLinks) {
+      // Scrape ALL found links without restrictive filtering
+      console.log(`Found ${links.length} links, scraping all of them...`);
+      
+      for (const link of links) {
         await this.scrapeSubpage(link);
+        // Small delay to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
     } catch (error) {
