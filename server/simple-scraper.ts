@@ -214,6 +214,20 @@ export class SimpleHelanScraper {
             if (!serviceExists) {
               await storage.createService(service);
               console.log(`Created service: ${service.name}`);
+              
+              // Also store in dedicated scraping database
+              await scrapingDb.insert(extractedServices).values({
+                name: service.name,
+                description: service.description || '',
+                category: service.category,
+                priceFrom: service.priceFrom,
+                priceTo: service.priceTo,
+                priceUnit: service.priceUnit,
+                sourceUrl: content.url,
+                isHelanService: service.isHelanService ? 'true' : 'false',
+                extractedAt: new Date(),
+                metadata: service.metadata,
+              });
             }
           } catch (error) {
             console.error('Error creating service:', error);
