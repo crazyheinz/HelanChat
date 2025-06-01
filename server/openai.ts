@@ -115,24 +115,53 @@ Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
       ` }
     ];
 
-    console.log("Calling OpenAI API...");
+    console.log("Calling OpenAI API with function calling...");
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages,
-      response_format: { type: "json_object" },
+      functions: functionDefinitions,
+      function_call: "auto",
       temperature: 0.7,
       max_tokens: 1500,
     });
 
-    const aiResponse = response.choices[0].message.content;
-    console.log("OpenAI response received:", !!aiResponse);
+    const choice = response.choices[0];
     
-    if (!aiResponse) {
-      throw new Error("No response from AI");
-    }
-
-    try {
-      const parsedResponse = JSON.parse(aiResponse);
+    // Check if GPT wants to call a function
+    if (choice.message.function_call) {
+      const functionName = choice.message.function_call.name;
+      const functionArgs = JSON.parse(choice.message.function_call.arguments);
+      
+      console.log(`GPT called function: ${functionName} with args:`, functionArgs);
+      
+      // Execute the function
+      const functionResult = await executeFunction(functionName, functionArgs);
+      
+      // Add function result to conversation and get final response
+      const updatedMessages = [
+        ...messages,
+        choice.message,
+        {
+          role: "function" as const,
+          name: functionName,
+          content: JSON.stringify(functionResult)
+        }
+      ];
+      
+      const finalResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: updatedMessages,
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 1500,
+      });
+      
+      const finalContent = finalResponse.choices[0].message.content;
+      if (!finalContent) {
+        throw new Error("No final response from OpenAI");
+      }
+      
+      const parsedResponse = JSON.parse(finalContent);
       console.log("Successfully parsed JSON response");
       console.log("Parsed content preview:", parsedResponse.content?.substring(0, 100));
       
@@ -187,57 +216,29 @@ Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
           productLinks: parsedResponse.productLinks || []
         },
       };
-    } catch (parseError) {
-      console.error("JSON parsing failed:", parseError);
-      console.error("Raw AI response:", aiResponse);
-      
-      // If JSON parsing fails, extract content manually
-      let cleanContent = aiResponse;
-      
-      // Try to extract content from malformed JSON
-      const contentMatch = aiResponse.match(/"content":\s*"([^"]*(?:\\.[^"]*)*)"/);
-      if (contentMatch) {
-        cleanContent = contentMatch[1]
-          .replace(/\\n\\n/g, '\n\n')
-          .replace(/\\n/g, '\n')
-          .replace(/\\"/g, '"')
-          .trim();
-      } else {
-        // If no JSON structure, clean up the raw response
-        cleanContent = aiResponse
-          .replace(/^[\s\S]*?"content":\s*"/, '')
-          .replace(/"[\s\S]*$/, '')
-          .replace(/\\n\\n/g, '\n\n')
-          .replace(/\\n/g, '\n')
-          .replace(/\\"/g, '"')
-          .trim();
+    } else {
+      // No function call needed, return direct response
+      const aiResponse = choice.message.content;
+      if (!aiResponse) {
+        throw new Error("No response from AI");
       }
       
       return {
-        content: cleanContent || "Dank u voor uw vraag. Ik help u graag verder met informatie over onze zorgdiensten.",
+        content: aiResponse,
         metadata: {
           showActions: false,
-          conversationType: determineConversationType(context.userMessage),
-        },
+          conversationType: "general"
+        }
       };
     }
-
   } catch (error) {
-    console.error("Error generating chat response:", error);
-    
-    // Fallback response in case of error
-    const fallbackMessage = context.language === 'nl' 
-      ? "Dank u voor uw vraag. Ik verbind u graag door met een zorgconsulent die u persoonlijk kan helpen. U kunt ook bellen naar ons gratis nummer 0800 880 80."
-      : context.language === 'fr'
-      ? "Merci pour votre question. Je vous mets volontiers en contact avec un consultant en soins qui peut vous aider personnellement. Vous pouvez également appeler notre numéro gratuit 0800 880 80."
-      : "Thank you for your question. I'd be happy to connect you with a care consultant who can help you personally. You can also call our free number 0800 880 80.";
-
+    console.error("Function calling error:", error);
     return {
-      content: fallbackMessage,
+      content: "Dank u voor uw vraag. Ik verbind u graag door met een zorgconsulent die u persoonlijk kan helpen. U kunt ook bellen naar ons gratis nummer 0800 880 80.",
       metadata: {
         showActions: true,
-        conversationType: "error",
-      },
+        conversationType: "error"
+      }
     };
   }
 }
