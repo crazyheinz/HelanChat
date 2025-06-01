@@ -10,6 +10,7 @@ export class SimpleHelanScraper {
     try {
       // Scrape using sitemaps for comprehensive coverage
       const sitemapUrls = [
+        'https://www.helanzorgwinkel.be/sitemap.xml',
         'https://www.helan.be/nl/sitemap_static_nl.xml',
         'https://www.helan.be/nl/sitemap_advantage_nl.xml', 
         'https://www.helan.be/nl/sitemap_location_nl.xml',
@@ -17,8 +18,7 @@ export class SimpleHelanScraper {
         'https://www.helan.be/fr/sitemap_static_fr.xml',
         'https://www.helan.be/fr/sitemap_advantage_fr.xml',
         'https://www.helan.be/fr/sitemap_location_fr.xml', 
-        'https://www.helan.be/fr/sitemap_blog_fr.xml',
-        'https://www.helanzorgwinkel.be/sitemap.xml'
+        'https://www.helan.be/fr/sitemap_blog_fr.xml'
       ];
 
       for (const sitemapUrl of sitemapUrls) {

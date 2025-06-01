@@ -14,16 +14,8 @@ initializeScrapingDb();
 // Start scraping schedule
 scheduleScrapingJob();
 
-// Run initial scraping on startup
-(async () => {
-  console.log('Starting initial scraping on server startup...');
-  try {
-    await simpleHelanScraper.scrapeHelanWebsites();
-    console.log('Initial scraping completed successfully');
-  } catch (error) {
-    console.error('Initial scraping failed:', error);
-  }
-})();
+// Scraping can be initiated manually via admin panel
+console.log('Server started. Scraping available via admin panel.');
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
