@@ -106,6 +106,14 @@ Format your response as JSON with this structure:
       const parsedResponse = JSON.parse(aiResponse);
       console.log("Successfully parsed JSON response");
       
+      // Clean up the content text - remove \n\n and format properly
+      if (parsedResponse.content) {
+        parsedResponse.content = parsedResponse.content
+          .replace(/\\n\\n/g, '\n\n')  // Convert literal \n\n to actual line breaks
+          .replace(/\\n/g, '\n')       // Convert literal \n to actual line breaks
+          .trim();
+      }
+      
       // Ensure we have valid recommendations with proper service mapping
       if (parsedResponse.recommendations) {
         parsedResponse.recommendations = parsedResponse.recommendations.map((rec: any) => {
