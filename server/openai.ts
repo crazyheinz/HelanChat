@@ -121,7 +121,35 @@ Respond naturally in ${context.language === 'nl' ? 'Dutch' : context.language ==
       
       const finalResponse = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: updatedMessages,
+        messages: [
+          ...updatedMessages,
+          {
+            role: "system" as const,
+            content: `Based on the search results, provide a helpful response in Dutch about the products found. 
+
+If products are found, include:
+- Product names and descriptions
+- Pricing information when available
+- Links to the Helan Zorgwinkel
+- Professional guidance about how to proceed
+
+Format your response as JSON:
+{
+  "content": "Your detailed Dutch response with product information",
+  "showActions": true,
+  "productLinks": [
+    {
+      "name": "Product name",
+      "url": "URL if available",
+      "price": "Price if mentioned",
+      "description": "Brief description"
+    }
+  ]
+}
+
+Always be helpful and professional. If no specific products are found, guide users to contact Helan Zorgwinkel directly.`
+          }
+        ],
         response_format: { type: "json_object" },
         temperature: 0.7,
         max_tokens: 1500,

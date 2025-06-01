@@ -67,10 +67,11 @@ export async function searchProducts(query: string): Promise<ScrapedContent[]> {
     console.log(`Searching products for: ${query}`);
     const results = await storage.searchScrapedContent(query);
     
-    // Filter for product-related content from helanzorgwinkel
+    // Filter for product-related content from helanzorgwinkel or helan.be
     const productResults = results.filter(item => 
-      item.url.includes('helanzorgwinkel.be') && 
-      (item.url.includes('/shop/') || item.content.toLowerCase().includes('prijs') || item.content.toLowerCase().includes('€'))
+      (item.url.includes('helanzorgwinkel.be') || item.url.includes('helan.be')) && 
+      (item.content.toLowerCase().includes(query.toLowerCase()) || 
+       (item.title && item.title.toLowerCase().includes(query.toLowerCase())))
     );
     
     return productResults.slice(0, 10); // Limit results
