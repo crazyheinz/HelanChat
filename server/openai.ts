@@ -77,12 +77,14 @@ Please provide a helpful response in ${context.language === 'nl' ? 'Dutch' : con
 4. Maintains Helan's professional and caring tone
 5. Includes practical next steps
 
-Format your response as JSON with this structure:
+Respond in valid JSON format with:
 {
-  "content": "Your response text here in the requested language",
-  "recommendations": [],
-  "showActions": false
+  "content": "Write your complete helpful response here in natural, conversational language without any formatting symbols",
+  "recommendations": ["List relevant service names if applicable"],
+  "showActions": true
 }
+
+Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
       ` }
     ];
 
@@ -144,9 +146,32 @@ Format your response as JSON with this structure:
       };
     } catch (parseError) {
       console.error("JSON parsing failed:", parseError);
-      // Fallback to plain text response if JSON parsing fails
+      console.error("Raw AI response:", aiResponse);
+      
+      // If JSON parsing fails, extract content manually
+      let cleanContent = aiResponse;
+      
+      // Try to extract content from malformed JSON
+      const contentMatch = aiResponse.match(/"content":\s*"([^"]*(?:\\.[^"]*)*)"/);
+      if (contentMatch) {
+        cleanContent = contentMatch[1]
+          .replace(/\\n\\n/g, '\n\n')
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"')
+          .trim();
+      } else {
+        // If no JSON structure, clean up the raw response
+        cleanContent = aiResponse
+          .replace(/^[\s\S]*?"content":\s*"/, '')
+          .replace(/"[\s\S]*$/, '')
+          .replace(/\\n\\n/g, '\n\n')
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"')
+          .trim();
+      }
+      
       return {
-        content: aiResponse,
+        content: cleanContent || "Dank u voor uw vraag. Ik help u graag verder met informatie over onze zorgdiensten.",
         metadata: {
           showActions: false,
           conversationType: determineConversationType(context.userMessage),
