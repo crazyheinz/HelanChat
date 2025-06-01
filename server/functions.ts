@@ -66,6 +66,7 @@ export async function searchProducts(query: string): Promise<ScrapedContent[]> {
   try {
     console.log(`Searching products for: ${query}`);
     const results = await storage.searchScrapedContent(query);
+    console.log(`Found ${results.length} total search results`);
     
     // Filter for product-related content from helanzorgwinkel or helan.be
     const productResults = results.filter(item => 
@@ -73,6 +74,9 @@ export async function searchProducts(query: string): Promise<ScrapedContent[]> {
       (item.content.toLowerCase().includes(query.toLowerCase()) || 
        (item.title && item.title.toLowerCase().includes(query.toLowerCase())))
     );
+    
+    console.log(`Filtered to ${productResults.length} product results`);
+    console.log('Sample results:', productResults.slice(0, 2).map(r => ({ url: r.url, title: r.title })));
     
     return productResults.slice(0, 10); // Limit results
   } catch (error) {

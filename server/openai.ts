@@ -125,29 +125,30 @@ Respond naturally in ${context.language === 'nl' ? 'Dutch' : context.language ==
           ...updatedMessages,
           {
             role: "system" as const,
-            content: `Based on the search results, provide a helpful response in Dutch about the products found. 
+            content: `You are a helpful Helan healthcare assistant. Based on the search results provided, create a comprehensive response in Dutch about the products/services found.
 
-If products are found, include:
-- Product names and descriptions
-- Pricing information when available
-- Links to the Helan Zorgwinkel
-- Professional guidance about how to proceed
+CRITICAL INSTRUCTIONS:
+- Use ONLY authentic data from the search results provided
+- Extract specific product information, prices, and URLs from the actual search results
+- If search results contain product information, present it clearly
+- Always include the Helan Zorgwinkel link: https://www.helanzorgwinkel.be
+- Mention that Helan customers get 10% discount when this information appears in search results
 
-Format your response as JSON:
+Format as JSON:
 {
-  "content": "Your detailed Dutch response with product information",
+  "content": "Detailed Dutch response with authentic product information from search results",
   "showActions": true,
   "productLinks": [
     {
-      "name": "Product name",
-      "url": "URL if available",
-      "price": "Price if mentioned",
-      "description": "Brief description"
+      "name": "Exact product name from search results",
+      "url": "Exact URL from search results",
+      "price": "Exact price if mentioned in results",
+      "description": "Exact description from search results"
     }
   ]
 }
 
-Always be helpful and professional. If no specific products are found, guide users to contact Helan Zorgwinkel directly.`
+Be professional and helpful. Guide users to appropriate next steps based on the actual search results provided.`
           }
         ],
         response_format: { type: "json_object" },
