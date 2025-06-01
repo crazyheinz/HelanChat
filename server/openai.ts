@@ -72,16 +72,23 @@ User message: ${context.userMessage}
 
 Please provide a helpful response in ${context.language === 'nl' ? 'Dutch' : context.language === 'fr' ? 'French' : 'English'} that:
 1. Addresses the user's specific question or need
-2. Recommends relevant services when appropriate
+2. For product/article questions: Include direct website links, exact prices, and product descriptions from scraped content
 3. Provides specific cost information when available
 4. Maintains Helan's professional and caring tone
-5. Includes practical next steps
+5. Includes practical next steps and clickable links when relevant
+
+IMPORTANT: When showing products/articles, always include:
+- Direct clickable link to the product page (from scraped URL data)
+- Exact price information if available
+- Product description from the actual website content
+- Reference to product images when mentioned in content
 
 Respond in valid JSON format with:
 {
-  "content": "Write your complete helpful response here in natural, conversational language without any formatting symbols",
+  "content": "Write your complete helpful response with clickable links in markdown format [link text](URL) when showing products",
   "recommendations": ["List relevant service names if applicable"],
-  "showActions": true
+  "showActions": true,
+  "productLinks": [{"name": "Product Name", "url": "direct_url", "price": "exact_price", "description": "from_scraped_content"}]
 }
 
 Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
@@ -157,6 +164,7 @@ Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
           recommendations: parsedResponse.recommendations || [],
           showActions: parsedResponse.showActions || false,
           conversationType: determineConversationType(context.userMessage),
+          productLinks: parsedResponse.productLinks || [],
         },
       };
     } catch (parseError) {

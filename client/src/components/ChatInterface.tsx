@@ -154,9 +154,41 @@ export default function ChatInterface() {
                 <CardContent className="p-4">
                   <div className="prose prose-sm max-w-none">
                     {message.content.split('\n').map((line, i) => (
-                      <p key={i} className={i === 0 ? "mt-0" : ""}>{line}</p>
+                      <p key={i} className={i === 0 ? "mt-0" : ""} 
+                         dangerouslySetInnerHTML={{
+                           __html: line.replace(
+                             /\[([^\]]+)\]\(([^)]+)\)/g,
+                             '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-helan-blue hover:underline">$1</a>'
+                           )
+                         }}
+                      />
                     ))}
                   </div>
+                  
+                  {/* Product Links Section */}
+                  {message.metadata?.productLinks && message.metadata.productLinks.length > 0 && (
+                    <div className="mt-4 space-y-3 border-t pt-4">
+                      <h4 className="font-semibold text-sm">Relevante producten:</h4>
+                      {message.metadata.productLinks.map((product: any, idx: number) => (
+                        <div key={idx} className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                          <a 
+                            href={product.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-helan-blue hover:underline font-medium block mb-1"
+                          >
+                            {product.name}
+                          </a>
+                          {product.price && (
+                            <p className="text-green-600 font-semibold text-sm">{product.price}</p>
+                          )}
+                          {product.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
                   {/* Service Recommendations */}
                   {message.metadata?.recommendations && (
