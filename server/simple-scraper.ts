@@ -161,6 +161,7 @@ export class SimpleHelanScraper {
     lastScraped: Date;
   }): Promise<void> {
     try {
+      // Store in original database
       const existing = await storage.getScrapedContentByUrl(data.url);
       
       if (existing) {
@@ -173,6 +174,25 @@ export class SimpleHelanScraper {
       } else {
         await storage.createScrapedContent(data);
       }
+
+      // Also store in dedicated scraping database
+      await scrapingDb.insert(scrapingContent).values({
+        url: data.url,
+        title: data.title,
+        content: data.content,
+        metadata: data.metadata,
+        scrapedAt: data.lastScraped,
+        lastUpdated: data.lastScraped,
+      }).onConflictDoUpdate({
+        target: scrapingContent.url,
+        set: {
+          title: data.title,
+          content: data.content,
+          metadata: data.metadata,
+          lastUpdated: data.lastScraped,
+        },
+      });
+
     } catch (error) {
       console.error('Error storing scraped content:', error);
     }
