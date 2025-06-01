@@ -3,7 +3,7 @@ import type { ScrapedContent, Service, Message } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_SECRET_KEY || "default_key",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 interface UserProfile {
@@ -46,6 +46,13 @@ interface ChatResponse {
 
 export async function generateChatResponse(context: ChatContext): Promise<ChatResponse> {
   try {
+    console.log("Generating chat response for:", context.userMessage);
+    
+    // Check if API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OpenAI API key not configured");
+    }
+
     // Build context for the AI
     const systemPrompt = buildSystemPrompt(context.language);
     const userContext = buildUserContext(context);
@@ -70,26 +77,16 @@ Please provide a helpful response in ${context.language === 'nl' ? 'Dutch' : con
 4. Maintains Helan's professional and caring tone
 5. Includes practical next steps
 
-If recommending services, please format your response as JSON with this structure:
+Format your response as JSON with this structure:
 {
-  "content": "Your response text",
-  "recommendations": [
-    {
-      "id": "service_id",
-      "name": "Service Name",
-      "description": "Service description",
-      "category": "category_name",
-      "priceFrom": "price",
-      "priceUnit": "unit",
-      "isHelanService": true/false,
-      "relevanceScore": 0.8
-    }
-  ],
-  "showActions": true/false
+  "content": "Your response text here in the requested language",
+  "recommendations": [],
+  "showActions": false
 }
       ` }
     ];
 
+    console.log("Calling OpenAI API...");
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages,
@@ -99,12 +96,15 @@ If recommending services, please format your response as JSON with this structur
     });
 
     const aiResponse = response.choices[0].message.content;
+    console.log("OpenAI response received:", !!aiResponse);
+    
     if (!aiResponse) {
       throw new Error("No response from AI");
     }
 
     try {
       const parsedResponse = JSON.parse(aiResponse);
+      console.log("Successfully parsed JSON response");
       
       // Ensure we have valid recommendations with proper service mapping
       if (parsedResponse.recommendations) {
@@ -127,7 +127,7 @@ If recommending services, please format your response as JSON with this structur
       }
 
       return {
-        content: parsedResponse.content,
+        content: parsedResponse.content || "Dank u voor uw vraag. Ik help u graag verder.",
         metadata: {
           recommendations: parsedResponse.recommendations || [],
           showActions: parsedResponse.showActions || false,
@@ -135,6 +135,7 @@ If recommending services, please format your response as JSON with this structur
         },
       };
     } catch (parseError) {
+      console.error("JSON parsing failed:", parseError);
       // Fallback to plain text response if JSON parsing fails
       return {
         content: aiResponse,
@@ -150,10 +151,10 @@ If recommending services, please format your response as JSON with this structur
     
     // Fallback response in case of error
     const fallbackMessage = context.language === 'nl' 
-      ? "Excuses voor de technische storing. Ik verbind u graag door met een zorgconsulent die u persoonlijk kan helpen. U kunt ook bellen naar ons gratis nummer 0800 880 80."
+      ? "Dank u voor uw vraag. Ik verbind u graag door met een zorgconsulent die u persoonlijk kan helpen. U kunt ook bellen naar ons gratis nummer 0800 880 80."
       : context.language === 'fr'
-      ? "Excusez-nous pour le problème technique. Je vous mets volontiers en contact avec un consultant en soins qui peut vous aider personnellement. Vous pouvez également appeler notre numéro gratuit 0800 880 80."
-      : "Apologies for the technical issue. I'd be happy to connect you with a care consultant who can help you personally. You can also call our free number 0800 880 80.";
+      ? "Merci pour votre question. Je vous mets volontiers en contact avec un consultant en soins qui peut vous aider personnellement. Vous pouvez également appeler notre numéro gratuit 0800 880 80."
+      : "Thank you for your question. I'd be happy to connect you with a care consultant who can help you personally. You can also call our free number 0800 880 80.";
 
     return {
       content: fallbackMessage,
