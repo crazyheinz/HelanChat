@@ -28,7 +28,7 @@ export function useChat() {
 
   // Fetch messages for current conversation
   const { data: messages = [], refetch: refetchMessages } = useQuery({
-    queryKey: ["/api/chat", conversationId, "messages"],
+    queryKey: [`/api/chat/${conversationId}/messages`],
     enabled: !!conversationId,
     refetchInterval: false,
   });
@@ -62,7 +62,13 @@ export function useChat() {
       return response.json();
     },
     onSuccess: () => {
-      refetchMessages();
+      // Force refetch messages after successful send
+      setTimeout(() => {
+        refetchMessages();
+      }, 100);
+    },
+    onError: (error) => {
+      console.error("Error sending message:", error);
     },
   });
 
