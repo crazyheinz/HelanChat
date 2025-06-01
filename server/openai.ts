@@ -347,23 +347,30 @@ function buildServiceContext(services: Service[], scrapedContent: ScrapedContent
   const limitedServices = services.slice(0, 15);
   
   const serviceList = limitedServices.map(service => {
-    const price = service.priceFrom ? `€${service.priceFrom}/${service.priceUnit || 'month'}` : 'On request';
+    const price = service.priceFrom ? `€${service.priceFrom}/${service.priceUnit || 'month'}` : 'Op aanvraag';
     return `- ${service.name} (${service.category}): ${service.description} - ${price} ${service.isHelanService ? '[Helan Service]' : '[Partner Service]'}`;
   }).join('\n');
 
-  // Add relevant scraped content context
+  // Add relevant scraped content context - focus on product/service information
   const relevantContent = scrapedContent
-    .filter(content => content.title && content.content.length > 50)
-    .slice(0, 5)
-    .map(content => `${content.title}: ${content.content.substring(0, 200)}...`)
-    .join('\n');
+    .filter(content => content.title && content.content.length > 100)
+    .slice(0, 8)
+    .map(content => {
+      const snippet = content.content.substring(0, 300);
+      return `Pagina: ${content.title}\nURL: ${content.url}\nInhoud: ${snippet}...`;
+    })
+    .join('\n\n');
 
-  return `Available Services:\n${serviceList}\n\nAdditional Information:\n${relevantContent}`;
+  return `Beschikbare Diensten en Producten:\n${serviceList}\n\nGescrapte Website Informatie (${scrapedContent.length} pagina's beschikbaar):\n${relevantContent}`;
 }
 
 function determineConversationType(userMessage: string): string {
   const message = userMessage.toLowerCase();
   
+  if (message.includes('verkoop') || message.includes('verkopen') || message.includes('hebben jullie') || 
+      message.includes('bieden jullie') || message.includes('product') || message.includes('koop')) {
+    return 'product_availability_inquiry';
+  }
   if (message.includes('kost') || message.includes('prijs') || message.includes('betalen')) {
     return 'cost_inquiry';
   }

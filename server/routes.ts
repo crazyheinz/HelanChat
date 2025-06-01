@@ -80,9 +80,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conversation = await storage.getConversation(conversationId);
       const messages = await storage.getMessagesByConversation(conversationId);
       
-      // Get relevant scraped content for context
-      const scrapedContent = await storage.getScrapedContent();
+      // Get relevant scraped content for context - search based on user message
+      let scrapedContent = await storage.getScrapedContent();
       const services = await storage.getServices();
+      
+      // If user asks about specific products/services, search for relevant content
+      const searchTerms = content.toLowerCase();
+      if (searchTerms.includes('verkoop') || searchTerms.includes('koop') || searchTerms.includes('product') || 
+          searchTerms.includes('hebben jullie') || searchTerms.includes('bieden jullie aan')) {
+        
+        // Search in scraped content for relevant pages
+        const relevantContent = await storage.searchScrapedContent(content);
+        if (relevantContent.length > 0) {
+          scrapedContent = relevantContent.slice(0, 20); // Use more relevant results
+        }
+      }
 
       // Generate AI response
       const aiResponse = await generateChatResponse({
