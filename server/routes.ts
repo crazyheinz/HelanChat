@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userMessage: content,
         conversationHistory: messages,
         userProfile: conversation?.userProfile as any,
-        scrapedContent: scrapedContent.slice(0, 10), // Limit context
+        scrapedContent: scrapedContent, // Use all relevant content for better accuracy
         services: services.slice(0, 20),
         language: conversation?.language || "nl"
       });

@@ -35,12 +35,20 @@ interface ServiceRecommendation {
   image?: string;
 }
 
+interface ProductLink {
+  name: string;
+  url: string;
+  price?: string;
+  description?: string;
+}
+
 interface ChatResponse {
   content: string;
   metadata?: {
     recommendations?: ServiceRecommendation[];
     showActions?: boolean;
     conversationType?: string;
+    productLinks?: ProductLink[];
   };
 }
 
@@ -77,19 +85,28 @@ Please provide a helpful response in ${context.language === 'nl' ? 'Dutch' : con
 4. Maintains Helan's professional and caring tone
 5. Includes practical next steps and clickable links when relevant
 
-IMPORTANT: When showing products/articles, always include:
-- Direct clickable link to the product page (from scraped URL data)
-- Exact price information if available
-- Product description from the actual website content
-- Reference to product images when mentioned in content
+CRITICAL: When users ask about products, extract EXACT information from the scraped website content:
 
-Respond in valid JSON format with:
+ONLY use prices that appear in the actual scraped content - DO NOT invent or estimate prices.
+ONLY use product URLs that exist in the scraped data.
+ONLY provide product information that is verified in the actual website content.
+
+When products are found in scraped content, include productLinks:
 {
-  "content": "Write your complete helpful response with clickable links in markdown format [link text](URL) when showing products",
-  "recommendations": ["List relevant service names if applicable"],
+  "content": "Your response mentioning available products with accurate information",
+  "recommendations": [],
   "showActions": true,
-  "productLinks": [{"name": "Product Name", "url": "direct_url", "price": "exact_price", "description": "from_scraped_content"}]
+  "productLinks": [
+    {
+      "name": "EXACT product name from scraped content",
+      "url": "EXACT URL from scraped content",
+      "price": "EXACT price from scraped content or leave empty if not found",
+      "description": "EXACT description from scraped content"
+    }
+  ]
 }
+
+If no exact product information is found in scraped content, respond that you need to connect them with the Helan Zorgwinkel for accurate product details and pricing.
 
 Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
       ` }
@@ -164,7 +181,7 @@ Do NOT include \\n or \\n\\n in your content text. Use normal paragraph breaks.
           recommendations: parsedResponse.recommendations || [],
           showActions: parsedResponse.showActions || false,
           conversationType: determineConversationType(context.userMessage),
-          productLinks: parsedResponse.productLinks || [],
+          productLinks: parsedResponse.productLinks || []
         },
       };
     } catch (parseError) {
