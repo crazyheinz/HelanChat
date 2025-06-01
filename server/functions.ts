@@ -82,24 +82,70 @@ export async function searchProducts(query: string): Promise<ProductLink[]> {
     const results = await storage.searchScrapedContent(query);
     console.log(`Found ${results.length} total search results`);
 
+    // Prioriteer specifieke productpagina's
     const productResults = results.filter(
       (item) =>
-        (item.url.includes("helanzorgwinkel.be") ||
-          item.url.includes("helan.be")) &&
+        (item.url.includes("helanzorgwinkel.be") || item.url.includes("helan.be")) &&
         (item.content?.toLowerCase().includes(query.toLowerCase()) ||
-          item.title?.toLowerCase().includes(query.toLowerCase())),
-    );
+          (item.title && item.title.toLowerCase().includes(query.toLowerCase())))
+    ).sort((a, b) => {
+      // Prioriteer pagina's met prijzen en specifieke producten
+      const aHasPrice = a.content.includes('€') || a.content.includes('EUR');
+      const bHasPrice = b.content.includes('€') || b.content.includes('EUR');
+      const aIsProductPage = a.url.includes('/shop/') || a.url.includes('/product/');
+      const bIsProductPage = b.url.includes('/shop/') || b.url.includes('/product/');
+      
+      if (aIsProductPage && !bIsProductPage) return -1;
+      if (!aIsProductPage && bIsProductPage) return 1;
+      if (aHasPrice && !bHasPrice) return -1;
+      if (!aHasPrice && bHasPrice) return 1;
+      return 0;
+    });
 
     console.log(`Filtered to ${productResults.length} product results`);
 
     const productLinks: ProductLink[] = productResults
       .slice(0, 5)
-      .map((item) => ({
-        name: item.title || "Product zonder naam",
-        url: item.url,
-        price: extractPrice(item.content),
-        description: extractShortDescription(item.content),
-      }));
+      .map((item) => {
+        // Extract specifieke productinformatie uit de content
+        const content = item.content;
+        let productName = item.title || "Product";
+        let price = extractPrice(content);
+        let description = '';
+        
+        // Zoek naar specifieke productnamen in content die rolstoel bevatten
+        if (content.includes('rolstoel') || content.includes('Rolstoel')) {
+          const lines = content.split('\n');
+          for (const line of lines) {
+            if ((line.includes('rolstoel') || line.includes('Rolstoel')) && 
+                (line.includes('€') || line.includes('EUR')) &&
+                line.length < 100 && line.length > 10) {
+              const parts = line.split(/€|EUR/);
+              if (parts.length >= 2) {
+                productName = parts[0].trim();
+                const priceMatch = line.match(/(\d+(?:[.,]\d{2})?)\s*(?:€|EUR)/);
+                if (priceMatch) {
+                  price = `€${priceMatch[1]}`;
+                }
+              }
+              break;
+            }
+          }
+        }
+        
+        // Verbeterde beschrijving
+        if (content.includes('Lichtgewicht')) description += 'Lichtgewicht ';
+        if (content.includes('Manuele')) description += 'Manuele ';
+        if (content.includes('Elektrische')) description += 'Elektrische ';
+        description += 'rolstoel - Verkrijgbaar bij Helan Zorgwinkel';
+        
+        return {
+          name: productName,
+          url: item.url,
+          price: price,
+          description: description || extractShortDescription(content) || 'Rolstoel beschikbaar via Helan Zorgwinkel'
+        };
+      });
 
     console.log('Product links being returned:', productLinks.map(p => ({
       name: p.name,
